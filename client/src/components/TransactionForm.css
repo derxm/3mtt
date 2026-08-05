@@ -1,0 +1,122 @@
+.tx-form {
+  border-radius: var(--r-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tx-form-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.type-toggle {
+  display: flex;
+  gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--r-md);
+  padding: 4px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 9px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: transparent;
+  transition: var(--transition);
+}
+
+.toggle-btn.deposit.active {
+  background: var(--accent-green-dim);
+  color: var(--accent-green);
+}
+
+.toggle-btn.withdrawal.active {
+  background: var(--accent-red-dim);
+  color: var(--accent-red);
+}
+
+.toggle-btn:not(.active):hover {
+  background: var(--glass-bg-hover);
+  color: var(--text-secondary);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.form-input:focus {
+  border-color: var(--accent-green);
+  background: rgba(0,230,118,0.04);
+}
+
+.form-input::placeholder { color: var(--text-tertiary); }
+
+.form-error {
+  font-size: 13px;
+  color: var(--accent-red);
+  background: var(--accent-red-dim);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+}
+
+.btn-submit {
+  padding: 12px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn-submit.deposit {
+  background: var(--accent-green-dim);
+  border: 1px solid rgba(0,230,118,0.3);
+  color: var(--accent-green);
+}
+.btn-submit.deposit:hover {
+  background: rgba(0,230,118,0.25);
+}
+
+.btn-submit.withdrawal {
+  background: var(--accent-red-dim);
+  border: 1px solid rgba(255,23,68,0.3);
+  color: var(--accent-red);
+}
+.btn-submit.withdrawal:hover {
+  background: rgba(255,23,68,0.25);
+}
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+}
