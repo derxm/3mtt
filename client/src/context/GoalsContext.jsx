@@ -18,7 +18,14 @@ export function GoalsProvider({ children }) {
     setError(null)
     try {
       const { data } = await api.get('/goals')
-      setGoals(data.goals)
+      // pg returns NUMERIC as strings — normalise to numbers
+      const normalised = data.goals.map(g => ({
+        ...g,
+        targetAmount:   parseFloat(g.targetAmount),
+        currentAmount:  parseFloat(g.currentAmount  ?? 0),
+        computedAmount: parseFloat(g.computedAmount ?? g.currentAmount ?? 0),
+      }))
+      setGoals(normalised)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load goals.')
     } finally {
@@ -32,14 +39,18 @@ export function GoalsProvider({ children }) {
     try {
       const url = goalId ? `/transactions?goalId=${goalId}` : '/transactions'
       const { data } = await api.get(url)
+      // pg returns NUMERIC as strings — normalise all amounts to numbers
+      const normalised = data.transactions.map(t => ({
+        ...t,
+        amount: parseFloat(t.amount),
+      }))
       if (goalId) {
-        // Merge — replace only the transactions for this goal
         setTransactions(prev => [
-          ...prev.filter(t => t.goal_id !== goalId),
-          ...data.transactions,
+          ...prev.filter(t => t.goalId !== goalId),
+          ...normalised,
         ])
       } else {
-        setTransactions(data.transactions)
+        setTransactions(normalised)
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load transactions.')
@@ -66,7 +77,12 @@ export function GoalsProvider({ children }) {
         category:      data.category,
         deadline:      data.deadline || null,
       })
-      const goal = res.data.goal
+      const goal = {
+        ...res.data.goal,
+        targetAmount:   parseFloat(res.data.goal.targetAmount),
+        currentAmount:  parseFloat(res.data.goal.currentAmount  ?? 0),
+        computedAmount: parseFloat(res.data.goal.computedAmount ?? 0),
+      }
       setGoals(prev => [goal, ...prev])
       return goal
     } catch (err) {
@@ -82,7 +98,12 @@ export function GoalsProvider({ children }) {
         category:      data.category,
         deadline:      data.deadline || null,
       })
-      const updated = res.data.goal
+      const updated = {
+        ...res.data.goal,
+        targetAmount:   parseFloat(res.data.goal.targetAmount),
+        currentAmount:  parseFloat(res.data.goal.currentAmount  ?? 0),
+        computedAmount: parseFloat(res.data.goal.computedAmount ?? 0),
+      }
       setGoals(prev => prev.map(g => g.id === id ? updated : g))
       return updated
     } catch (err) {
@@ -94,7 +115,7 @@ export function GoalsProvider({ children }) {
     try {
       await api.delete(`/goals/${id}`)
       setGoals(prev => prev.filter(g => g.id !== id))
-      setTransactions(prev => prev.filter(t => t.goal_id !== id))
+      setTransactions(prev => prev.filter(t => t.goalId !== id))
     } catch (err) {
       throw new Error(err.response?.data?.message || 'Failed to delete goal.')
     }
@@ -110,18 +131,23 @@ export function GoalsProvider({ children }) {
         note: note || null,
       })
       const tx = res.data.transaction
-      setTransactions(prev => [tx, ...prev])
-      // Update current_amount on the matching goal locally
+      // pg returns NUMERIC as strings — normalise to numbers
+      const normalisedTx = {
+        ...tx,
+        amount: parseFloat(tx.amount),
+      }
+      setTransactions(prev => [normalisedTx, ...prev])
+      // Update amounts on the matching goal locally so the UI updates instantly
+      const delta = type === 'deposit' ? amount : -amount
       setGoals(prev => prev.map(g => {
         if (g.id !== goalId) return g
-        const delta = type === 'deposit' ? amount : -amount
         return {
           ...g,
-          current_amount: Math.max(0, parseFloat(g.current_amount) + delta),
-          computed_amount: Math.max(0, parseFloat(g.computed_amount || g.current_amount) + delta),
+          currentAmount:  Math.max(0, parseFloat(g.currentAmount  ?? 0) + delta),
+          computedAmount: Math.max(0, parseFloat(g.computedAmount ?? g.currentAmount ?? 0) + delta),
         }
       }))
-      return tx
+      return normalisedTx
     } catch (err) {
       throw new Error(err.response?.data?.message || 'Failed to add transaction.')
     }
@@ -136,11 +162,11 @@ export function GoalsProvider({ children }) {
       if (tx) {
         const delta = tx.type === 'deposit' ? -tx.amount : tx.amount
         setGoals(prev => prev.map(g => {
-          if (g.id !== tx.goal_id) return g
+          if (g.id !== tx.goalId) return g
           return {
             ...g,
-            current_amount: Math.max(0, parseFloat(g.current_amount) + delta),
-            computed_amount: Math.max(0, parseFloat(g.computed_amount || g.current_amount) + delta),
+            currentAmount:  Math.max(0, parseFloat(g.currentAmount  ?? 0) + delta),
+            computedAmount: Math.max(0, parseFloat(g.computedAmount ?? g.currentAmount ?? 0) + delta),
           }
         }))
       }
@@ -153,12 +179,13 @@ export function GoalsProvider({ children }) {
   const getCurrentAmount = (goalId) => {
     const goal = goals.find(g => g.id === goalId)
     if (!goal) return 0
-    // Prefer computed_amount (JOIN result from server), fall back to current_amount
-    return parseFloat(goal.computed_amount ?? goal.current_amount ?? 0)
+    // After deepCamel: computedAmount (from JOIN) or currentAmount
+    return parseFloat(goal.computedAmount ?? goal.currentAmount ?? 0)
   }
 
   const getGoalTransactions = (goalId) =>
-    [...transactions.filter(t => t.goal_id === goalId)]
+    // After deepCamel the field is goalId (camelCase)
+    [...transactions.filter(t => t.goalId === goalId)]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
 
   return (
