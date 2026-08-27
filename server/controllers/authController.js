@@ -1,12 +1,17 @@
 const bcrypt  = require('bcryptjs')
 const jwt     = require('jsonwebtoken')
 const pool    = require('../config/db')
-require('dotenv').config()
+require('../config/env')
+
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not set. Add it to server/.env.')
+}
 
 function signToken(user) {
   return jwt.sign(
     { id: user.id, name: user.name, email: user.email },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   )
 }

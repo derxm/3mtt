@@ -31,14 +31,18 @@ api.interceptors.request.use(config => {
   return config
 })
 
-// Convert snake_case response keys → camelCase; on 401 clear session
+// Convert snake_case response keys → camelCase; on 401 clear the expired
+// session, but never redirect while on the auth pages (so login/register
+// errors like "Invalid email or password" can actually be shown).
+const PUBLIC_PATHS = ['/login', '/register']
+
 api.interceptors.response.use(
   response => {
     response.data = deepCamel(response.data)
     return response
   },
   error => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !PUBLIC_PATHS.includes(window.location.pathname)) {
       localStorage.removeItem('st_token')
       localStorage.removeItem('st_user')
       window.location.href = '/login'

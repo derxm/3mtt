@@ -1,5 +1,10 @@
 const jwt = require('jsonwebtoken')
-require('dotenv').config()
+require('../config/env')
+
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not set. Add it to server/.env.')
+}
 
 module.exports = function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization
@@ -11,7 +16,7 @@ module.exports = function authMiddleware(req, res, next) {
   const token = authHeader.split(' ')[1]
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    const decoded = jwt.verify(token, JWT_SECRET)
     req.user = decoded   // { id, name, email, iat, exp }
     next()
   } catch (err) {

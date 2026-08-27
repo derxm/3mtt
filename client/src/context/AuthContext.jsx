@@ -6,6 +6,22 @@ const AuthContext = createContext(null)
 const TOKEN_KEY = 'st_token'
 const USER_KEY  = 'st_user'
 
+// Build a useful error message from an axios error, because the API may be
+// unreachable, misconfigured (HTML instead of JSON), or genuinely return a
+// JSON error body like "Invalid email or password."
+function apiErrorMessage(err, fallback) {
+  const data = err.response?.data
+  if (data && typeof data === 'object' && data.message) return data.message
+  if (err.code === 'ERR_NETWORK' || !err.response) {
+    return 'Cannot reach the server. Check your connection or the API URL.'
+  }
+  if (typeof data === 'string' && data.toLowerCase().includes('<html')) {
+    return 'Server returned a web page instead of JSON. The API URL is not pointing at the backend.'
+  }
+  if (err.response.status >= 500) return 'Server error. Please try again later.'
+  return fallback
+}
+
 export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [loading, setLoading] = useState(true)
@@ -36,7 +52,7 @@ export function AuthProvider({ children }) {
       const { data } = await api.post('/auth/register', { name, email, password })
       saveSession(data.token, data.user)
     } catch (err) {
-      throw new Error(err.response?.data?.message || 'Registration failed.')
+      throw new Error(apiErrorMessage(err, 'Registration failed.'))
     }
   }
 
@@ -45,7 +61,7 @@ export function AuthProvider({ children }) {
       const { data } = await api.post('/auth/login', { email, password })
       saveSession(data.token, data.user)
     } catch (err) {
-      throw new Error(err.response?.data?.message || 'Login failed.')
+      throw new Error(apiErrorMessage(err, 'Login failed.'))
     }
   }
 
