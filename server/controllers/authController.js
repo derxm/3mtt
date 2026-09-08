@@ -3,15 +3,12 @@ const jwt     = require('jsonwebtoken')
 const pool    = require('../config/db')
 require('../config/env')
 
-const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET is not set. Add it to server/.env.')
-}
-
 function signToken(user) {
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('JWT_SECRET environment variable is not set.')
   return jwt.sign(
     { id: user.id, name: user.name, email: user.email },
-    JWT_SECRET,
+    secret,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   )
 }
