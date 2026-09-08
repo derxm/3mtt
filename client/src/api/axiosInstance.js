@@ -15,10 +15,19 @@ function deepCamel(obj) {
   return obj
 }
 
+// Build the base URL safely:
+// - If VITE_API_URL is set (production), use it — strip trailing slash, ensure it ends with /api
+// - If not set (local dev), fall back to /api which the Vite proxy forwards to localhost:5000
+function buildBaseURL() {
+  const raw = import.meta.env.VITE_API_URL
+  if (!raw) return '/api'
+  const trimmed = raw.replace(/\/+$/, '') // strip trailing slashes
+  // If the user set the root URL without /api, append it automatically
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`
+}
+
 const api = axios.create({
-  // In production VITE_API_URL = https://your-app.railway.app/api
-  // In local dev the Vite proxy forwards /api → http://localhost:5000
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: buildBaseURL(),
   headers: { 'Content-Type': 'application/json' },
 })
 
