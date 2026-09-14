@@ -1,8 +1,9 @@
 -- ============================================================
 -- SaveTrack Database Schema
--- Run this once against your PostgreSQL database:
---   psql -U postgres -d savings_tracker -f config/schema.sql
 -- ============================================================
+
+-- Enable pgcrypto so gen_random_uuid() works on all PG versions
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Users
 CREATE TABLE IF NOT EXISTS users (
