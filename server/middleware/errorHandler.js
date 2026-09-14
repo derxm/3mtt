@@ -17,7 +17,13 @@ module.exports = function errorHandler(err, req, res, next) {
     return res.status(400).json({ message: 'Value violates a database constraint.' })
   }
 
+  // PostgreSQL "relation does not exist" — schema not applied yet
+  if (err.code === '42P01') {
+    return res.status(500).json({ message: 'Database table missing. Run the schema migration.' })
+  }
+
   const status  = err.status || err.statusCode || 500
-  const message = err.expose ? err.message : 'Internal server error.'
+  // Always include the real error message so Render logs show what went wrong
+  const message = err.message || 'Internal server error.'
   res.status(status).json({ message })
 }
