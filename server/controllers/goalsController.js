@@ -98,7 +98,8 @@ async function updateGoal(req, res, next) {
          title         = COALESCE($1, title),
          target_amount = COALESCE($2, target_amount),
          category      = COALESCE($3, category),
-         deadline      = $4
+         deadline      = $4,
+         updated_at    = NOW()
        WHERE id = $5 AND user_id = $6
        RETURNING *`,
       [

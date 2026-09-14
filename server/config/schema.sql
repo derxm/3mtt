@@ -1,20 +1,16 @@
--- ============================================================
 -- SaveTrack Database Schema
--- ============================================================
+-- NOTE: No PL/pgSQL blocks — kept simple so it can be run statement by statement.
 
--- Enable pgcrypto so gen_random_uuid() works on all PG versions
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Users
 CREATE TABLE IF NOT EXISTS users (
-  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  name         VARCHAR(100) NOT NULL,
-  email        VARCHAR(150) NOT NULL UNIQUE,
-  password_hash TEXT        NOT NULL,
-  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+  id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  name          VARCHAR(100) NOT NULL,
+  email         VARCHAR(150) NOT NULL UNIQUE,
+  password_hash TEXT         NOT NULL,
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
--- Savings Goals
 CREATE TABLE IF NOT EXISTS savings_goals (
   id             UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id        UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -27,7 +23,6 @@ CREATE TABLE IF NOT EXISTS savings_goals (
   updated_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
--- Transactions
 CREATE TABLE IF NOT EXISTS transactions (
   id         UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   goal_id    UUID          NOT NULL REFERENCES savings_goals(id) ON DELETE CASCADE,
@@ -39,21 +34,6 @@ CREATE TABLE IF NOT EXISTS transactions (
   created_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
--- Indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_goals_user_id        ON savings_goals(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_goal_id ON transactions(goal_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
-
--- Auto-update updated_at on savings_goals
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS set_updated_at ON savings_goals;
-CREATE TRIGGER set_updated_at
-  BEFORE UPDATE ON savings_goals
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
